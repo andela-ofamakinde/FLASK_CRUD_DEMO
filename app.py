@@ -58,4 +58,50 @@ def get_book_by_isbn(isbn):
             }
     return jsonify(return_value)
     
+    
+@app.route('/books/<int:isbn>', methods=['PUT'])
+def replaceBooks(isbn):
+    request_data = request.get_json()
+    new_book = {
+        'name' : request_data['name'],
+        'price' : request_data['price'],
+        'isbn' : isbn
+    }
+    if (not validBookObject(new_book)):
+        invalidBookErrorMessage = {
+            "error": "Invalid book object passed in request",
+            "helpString": "Refer to documentation for correct format"
+        }
+        response = Response(json.dumps(invalidBookErrorMessage), status=400,  mimetype='application/json')
+        return response
+    
+    i = 0
+    for book in books:
+        current_isbn = book['isbn']
+        if current_isbn == isbn:
+            books[i] = new_book
+        i += 1
+    response = Response('', status=204)
+    return response
+
+@app.route('/books/<int:isbn>', methods=['PATCH'])
+def updateBooks(isbn):
+    request_data =  request.get_json()
+    can_update = ['name', 'price']
+    if all(item in can_update for item in request_data):
+        for book in books:
+            if book["isbn"] == isbn:
+                book.update(request_data)
+        response = Response("", status=204)
+        response.headers['Location'] = "/books/" + str(isbn)
+        return response
+    else:
+        invalidBookErrorMessage = {
+            "error": "Invalid book object passed in request",
+            "helpString": "Refer to documentation for correct format"
+        }
+        response = Response(json.dumps(invalidBookErrorMessage), status=400,  mimetype='application/json')
+        return response
+        
+        
 app.run(port=5000)
